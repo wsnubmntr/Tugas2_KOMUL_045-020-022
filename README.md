@@ -16,7 +16,6 @@ Laporan ini membahas augmentasi data, kompresi citra, dan watermarking pada subs
 - `notebooks/Tugas_2_Komputasi_Multimedia.ipynb`: notebook utama.
 - `prepare_daisee.py`: pengambil subset DAiSEE dan pengekstrak frame tengah.
 - `pipeline.py`: skrip pipeline yang menjalankan seluruh eksperimen.
-- `make_report.py`: pembuat laporan PDF dari berkas CSV dan gambar hasil pipeline.
 - `results/laporan_tugas2.pdf`: laporan lengkap.
 - `results/A_Augmentation`: frame asli, enam hasil augmentasi, dan grid perbandingan.
 - `results/B_Compression`: berkas terkompresi, tabel CSV, grafik, dan perbandingan visual.
@@ -63,14 +62,6 @@ Pipeline juga dapat dijalankan tanpa notebook.
 ```powershell
 .\.venv\Scripts\python.exe pipeline.py
 ```
-
-Setelah pipeline selesai, laporan PDF dapat dibangun ulang.
-
-```powershell
-.\.venv\Scripts\python.exe make_report.py
-```
-
-`make_report.py` membaca `compression_results.csv`, `watermark_metrics.csv`, `watermark_extraction.csv`, `robustness_results.csv`, dan `selected_clips.csv`. Jalankan pipeline terlebih dahulu agar angka dan gambar yang dipakai laporan sesuai.
 
 ## Metode
 
