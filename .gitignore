@@ -1,0 +1,21 @@
+# Environment
+.venv/
+venv/
+env/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Dataset publik (unduh sendiri, tidak di-commit)
+dataset/FER2013/
+
+# Output sementara
+*.log
+.DS_Store
+Thumbs.db
