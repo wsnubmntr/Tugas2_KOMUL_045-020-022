@@ -3,19 +3,32 @@
 venv/
 env/
 
-# Python
+# Python cache
 __pycache__/
 *.py[cod]
 *.egg-info/
 .pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
 
-# Jupyter
+# Jupyter cache
 .ipynb_checkpoints/
 
-# Dataset publik (unduh sendiri, tidak di-commit)
-dataset/FER2013/
+# AI agent and local tooling
+.commandcode/
+.tools/
+.vscode/
+.idea/
 
-# Output sementara
+# Logs and temporary files
 *.log
+*.tmp
 .DS_Store
 Thumbs.db
+
+# Playwright artifacts
+playwright-report/
+test-results/
+*.webm

@@ -1,4 +1,9 @@
-"""Pipeline Tugas 2 Komputasi Multimedia: A, B, C."""
+"""Pipeline Tugas 2 Komputasi Multimedia: A, B, C.
+
+Penanda ``# %%`` memisahkan empat sel notebook. Notebook memakai potongan kode
+yang sama, sehingga tidak ada salinan logika yang perlu disinkronkan manual.
+"""
+# %% [1] Persiapan dan konfigurasi
 from pathlib import Path
 import shutil
 import time
@@ -12,7 +17,10 @@ import matplotlib.pyplot as plt
 from PIL import Image, ImageDraw
 from skimage.metrics import peak_signal_noise_ratio, structural_similarity
 
-ROOT = Path(__file__).resolve().parent
+if "__file__" in globals():
+    ROOT = Path(__file__).resolve().parent
+else:  # notebook dijalankan dari folder notebooks/
+    ROOT = Path.cwd().resolve().parent if Path.cwd().name == "notebooks" else Path.cwd().resolve()
 DATASET_FRAMES = ROOT / "dataset" / "DAiSEE" / "frames"
 RESULTS = ROOT / "results"
 
@@ -37,7 +45,11 @@ def aktifkan_cairo():
 
 
 aktifkan_cairo()
-import cairosvg
+try:
+    import cairosvg
+except (ImportError, OSError):
+    cairosvg = None
+    print("CairoSVG tidak dapat dimuat: paket atau libcairo-2.dll tidak ditemukan.")
 
 
 A_ORIGINAL = RESULTS / "A_Augmentation" / "original"
@@ -57,7 +69,11 @@ for d in (COMPRESSED, COMPARISON, GRAPHS):
 WM = RESULTS / "C_Watermarking"
 for d in ("visible", "invisible", "extracted", "robustness_test"):
     (WM / d).mkdir(parents=True, exist_ok=True)
+for path in (WM / "robustness_test").iterdir():
+    if path.is_file():
+        path.unlink()
 
+# %% [2] Augmentasi data
 for folder in [A_ORIGINAL, *(RESULTS / "A_Augmentation" / t for t in A_TECHS)]:
     for path in folder.iterdir():
         if path.is_file():
@@ -181,6 +197,7 @@ plt.savefig(RESULTS / "A_Augmentation" / "comparison_grid.png", dpi=150)
 plt.close(fig)
 print("Grid augmentasi disimpan.")
 
+# %% [3] Kompresi citra
 base_img_path = sorted(A_ORIGINAL.glob("gambar_01_*"))[0]
 base_256 = siapkan_256(base_img_path)
 
@@ -199,17 +216,22 @@ svg_text = '''<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" v
 (COMPRESSION_INPUT / "input.svg").write_text(svg_text, encoding="utf-8")
 
 svg_raster_png = COMPRESSION_INPUT / "input_svg_raster.png"
-svg_raster_bmp = COMPRESSION_INPUT / "input_svg_raster.bmp"
-cairosvg.svg2png(
-    bytestring=svg_text.encode("utf-8"),
-    write_to=str(svg_raster_png),
-    output_width=256,
-    output_height=256,
-)
-with Image.open(svg_raster_png) as svg_png:
-    rgb = svg_png.convert("RGB")
-    rgb.save(svg_raster_png)
-    rgb.save(svg_raster_bmp)
+if cairosvg is None:
+    if not svg_raster_png.exists():
+        raise RuntimeError(
+            "CairoSVG tidak tersedia dan raster SVG belum ada. Setel GTK_RUNTIME "
+            "ke folder yang memuat libcairo-2.dll, lalu jalankan ulang pipeline."
+        )
+    print("Memakai raster SVG yang sudah ada:", svg_raster_png.name)
+else:
+    cairosvg.svg2png(
+        bytestring=svg_text.encode("utf-8"),
+        write_to=str(svg_raster_png),
+        output_width=256,
+        output_height=256,
+    )
+    with Image.open(svg_raster_png) as svg_png:
+        svg_png.convert("RGB").save(svg_raster_png)
 
 inputs = {
     "BMP": COMPRESSION_INPUT / "input.bmp",
@@ -348,8 +370,10 @@ for fmt, path in inputs.items():
         "Ukuran baseline (bytes)": baseline_size,
         "Ukuran output (bytes)": comp_size,
         "Perbandingan input:output": f"{original_size}:{comp_size}",
+        "Rasio berkas input:output": round(original_size / comp_size, 3),
         "Compression ratio": round(baseline_size / comp_size, 3),
-        "Space saving (%)": round((1 - comp_size / baseline_size) * 100, 2),
+        "Space saving (%)": round((1 - comp_size / original_size) * 100, 2),
+        "Space saving baseline (%)": round((1 - comp_size / baseline_size) * 100, 2),
         "PSNR": round(float(psnr), 3),
         "SSIM": round(float(ssim), 4),
         "Waktu kompresi (s)": round(t_enc, 5),
@@ -381,8 +405,10 @@ for fmt, path in inputs.items():
         "Ukuran baseline (bytes)": baseline_size,
         "Ukuran output (bytes)": comp_size,
         "Perbandingan input:output": f"{original_size}:{comp_size}",
+        "Rasio berkas input:output": round(original_size / comp_size, 3),
         "Compression ratio": round(baseline_size / comp_size, 3),
-        "Space saving (%)": round((1 - comp_size / baseline_size) * 100, 2),
+        "Space saving (%)": round((1 - comp_size / original_size) * 100, 2),
+        "Space saving baseline (%)": round((1 - comp_size / baseline_size) * 100, 2),
         "PSNR": round(float(psnr), 3),
         "SSIM": round(float(ssim), 4),
         "Waktu kompresi (s)": round(t_enc, 5),
@@ -412,8 +438,10 @@ for fmt, path in inputs.items():
         "Ukuran baseline (bytes)": baseline_size,
         "Ukuran output (bytes)": comp_size,
         "Perbandingan input:output": f"{original_size}:{comp_size}",
+        "Rasio berkas input:output": round(original_size / comp_size, 3),
         "Compression ratio": round(baseline_size / comp_size, 3),
-        "Space saving (%)": round((1 - comp_size / baseline_size) * 100, 2),
+        "Space saving (%)": round((1 - comp_size / original_size) * 100, 2),
+        "Space saving baseline (%)": round((1 - comp_size / baseline_size) * 100, 2),
         "PSNR": round(float(psnr), 3),
         "SSIM": round(float(ssim), 4),
         "Waktu kompresi (s)": round(t_enc, 5),
@@ -439,9 +467,9 @@ print(df.to_string(index=False))
 fig, ax = plt.subplots(figsize=(10, 5))
 pivot = df.pivot(index="Format", columns="Metode", values="Compression ratio")
 pivot.plot(kind="bar", ax=ax)
-ax.set_ylabel("Rasio kompresi")
+ax.set_ylabel("Rasio kompresi (baseline / output)")
 ax.set_xlabel("Format")
-ax.set_title("Perbandingan rasio kompresi")
+ax.set_title("Perbandingan rasio kompresi terhadap baseline")
 ax.tick_params(axis="x", rotation=0)
 plt.tight_layout()
 plt.savefig(GRAPHS / "compression_ratio.png", dpi=150)
@@ -458,6 +486,20 @@ plt.tight_layout()
 plt.savefig(GRAPHS / "space_saving.png", dpi=150)
 plt.close(fig)
 
+fig, ax = plt.subplots(figsize=(10, 5))
+pivot3 = df.pivot(index="Format", columns="Metode", values="Rasio berkas input:output")
+pivot3.plot(kind="bar", ax=ax)
+ax.axhline(1.0, color="gray", linestyle="--", linewidth=1, label="Batas impas (1x)")
+ax.set_ylabel("Rasio ukuran berkas input : output")
+ax.set_xlabel("Format")
+ax.set_title("Perbandingan rasio terhadap ukuran berkas input")
+ax.tick_params(axis="x", rotation=0)
+ax.legend(fontsize=8)
+plt.tight_layout()
+plt.savefig(GRAPHS / "file_ratio.png", dpi=150)
+plt.close(fig)
+
+# %% [4] Watermarking
 wm_base_path = sorted(A_ORIGINAL.glob("gambar_01_*"))[0]
 wm_base = siapkan_256(wm_base_path)
 
@@ -496,19 +538,24 @@ ssim_inv = structural_similarity(wm_base, invisible, channel_axis=2, data_range=
 
 bit_acc = float(np.mean((extracted.flatten() == wm_flat))) * 100.0
 
-attacks = {}
-jpeg_path = WM / "robustness_test" / "invisible_jpeg.jpg"
-cv2.imwrite(str(jpeg_path), invisible, [cv2.IMWRITE_JPEG_QUALITY, 70])
-attacked_jpeg = cv2.imread(str(jpeg_path))
-small = cv2.resize(invisible, (128, 128))
-resized_back = cv2.resize(small, (256, 256))
-cv2.imwrite(str(WM / "robustness_test" / "invisible_resized.png"), resized_back)
-h, w = invisible.shape[:2]
-ch, cw = int(h * 0.8), int(w * 0.8)
-y0, x0 = (h - ch)//2, (w - cw)//2
-cropped = invisible[y0:y0+ch, x0:x0+cw]
-cropped_back = cv2.resize(cropped, (w, h))
-cv2.imwrite(str(WM / "robustness_test" / "invisible_cropped.png"), cropped_back)
+SERANGAN = ("JPEG", "Resize", "Crop")
+EKSTENSI = {"JPEG": ".jpg", "Resize": ".png", "Crop": ".png"}
+
+
+def terapkan_serangan(citra, serangan):
+    """Terapkan satu operasi robustness dan kembalikan array hasilnya."""
+    if serangan == "JPEG":
+        ok, buf = cv2.imencode(".jpg", citra, [cv2.IMWRITE_JPEG_QUALITY, 70])
+        if not ok:
+            raise ValueError("Encoding JPEG untuk uji robustness gagal")
+        return cv2.imdecode(buf, cv2.IMREAD_COLOR)
+    if serangan == "Resize":
+        return cv2.resize(cv2.resize(citra, (128, 128)), (256, 256))
+    h, w = citra.shape[:2]
+    ch, cw = int(h * 0.8), int(w * 0.8)
+    y0, x0 = (h - ch) // 2, (w - cw) // 2
+    return cv2.resize(citra[y0:y0 + ch, x0:x0 + cw], (w, h))
+
 
 def extract_bits(img):
     b = img[:, :, 0].flatten()
@@ -517,11 +564,47 @@ def extract_bits(img):
         out[i] = b[i] & 1
     return out
 
-for name, att in [("JPEG", attacked_jpeg), ("Resize", resized_back), ("Crop", cropped_back)]:
-    bits = extract_bits(att)
-    acc = float(np.mean(bits == wm_flat)) * 100.0
-    attacks[name] = acc
-    Image.fromarray((bits.reshape(wm_bin.shape) * 255).astype(np.uint8)).save(WM / "robustness_test" / f"extracted_{name}.png")
+
+attacks = {}
+for serangan in SERANGAN:
+    hasil = terapkan_serangan(invisible, serangan)
+    cv2.imwrite(
+        str(WM / "robustness_test" / f"invisible_{serangan.lower()}{EKSTENSI[serangan]}"),
+        hasil,
+    )
+    bits = extract_bits(hasil)
+    attacks[serangan] = float(np.mean(bits == wm_flat)) * 100.0
+    Image.fromarray((bits.reshape(wm_bin.shape) * 255).astype(np.uint8)).save(
+        WM / "robustness_test" / f"extracted_{serangan}.png"
+    )
+
+# Visible watermark diuji dengan operasi yang sama. Residualnya terhadap citra
+# dasar (visible - base) dipakai sebagai pola acuan, lalu dihitung korelasi NCC
+# dan IoU antara pola itu dan residual citra setelah serangan.
+mark_residual = visible.astype(np.int16) - wm_base.astype(np.int16)
+mark_mask = np.abs(mark_residual).max(axis=2) > 0
+acuan_residual = mark_residual[:, :, 2].ravel().astype(np.float64)
+
+robust_visible = []
+hasil_visible = {}
+for serangan in SERANGAN:
+    hasil = terapkan_serangan(visible, serangan)
+    dasar = terapkan_serangan(wm_base, serangan)
+    sisa = hasil.astype(np.int16) - dasar.astype(np.int16)
+    ncc = float(np.corrcoef(acuan_residual, sisa[:, :, 2].ravel().astype(np.float64))[0, 1])
+    kuat = np.abs(sisa).max(axis=2) > 3
+    gabung = int((kuat | mark_mask).sum())
+    iou = float((kuat & mark_mask).sum() / gabung) if gabung else 0.0
+    hasil_visible[serangan] = hasil
+    cv2.imwrite(
+        str(WM / "robustness_test" / f"visible_{serangan.lower()}{EKSTENSI[serangan]}"),
+        hasil,
+    )
+    robust_visible.append({"Serangan": serangan, "NCC": round(ncc, 4), "IoU": round(iou, 4)})
+
+robust_visible_df = pd.DataFrame(robust_visible)
+robust_visible_df.to_csv(WM / "robustness_visible.csv", index=False)
+print(robust_visible_df.to_string(index=False))
 
 wm_summary = pd.DataFrame([
     {"Teknik": "Visible", "PSNR": round(float(psnr_vis), 3), "SSIM": round(float(ssim_vis), 4)},
@@ -544,6 +627,16 @@ ax.set_title("Bit accuracy setelah serangan")
 ax.legend()
 plt.tight_layout()
 plt.savefig(WM / "robustness_chart.png", dpi=150)
+plt.close(fig)
+
+fig, axes = plt.subplots(1, 4, figsize=(12, 3.2))
+panel = [("Visible", visible)] + [(f"Visible + {s}", hasil_visible[s]) for s in SERANGAN]
+for ax, (judul, im) in zip(axes, panel):
+    ax.imshow(cv2.cvtColor(im, cv2.COLOR_BGR2RGB))
+    ax.set_title(judul, fontsize=9)
+    ax.axis("off")
+plt.tight_layout()
+plt.savefig(WM / "robustness_visible_grid.png", dpi=150)
 plt.close(fig)
 
 fig, axes = plt.subplots(1, 3, figsize=(9, 3))
