@@ -22,6 +22,9 @@ htmlcov/
 .vscode/
 .idea/
 
+# Local tooling / scripts
+make_report.py
+
 # Logs and temporary files
 *.log
 *.tmp

@@ -2,6 +2,12 @@
 
 Laporan ini membahas augmentasi data, kompresi citra, dan watermarking pada subset DAiSEE. Sepuluh klip dipilih dari split Train dengan seed 42 dan komposisi label 3 Boredom, 3 Engagement, 2 Confusion, dan 2 Frustration. Satu frame tengah diambil dari setiap klip sebagai citra uji.
 
+## Identitas
+
+- Ataqah Ramadhan Widiyana Putra (105224022)
+- Wisnu Bimantoro (105224045)
+- Paulus R.A.S (105224020)
+
 ## Isi folder
 
 - `dataset/DAiSEE/frames`: sepuluh frame DAiSEE berukuran 640 x 480.
